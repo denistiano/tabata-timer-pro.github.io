@@ -43,6 +43,9 @@ html, body {
     height: 100%;
     margin: 0;
     padding: 0;
+    overflow-x: hidden;
+    /* Prevent zoom on mobile */
+    touch-action: manipulation;
 }
 
 body {
@@ -56,6 +59,7 @@ body {
     height: 100vh;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 /* Navigation */
@@ -172,9 +176,14 @@ body {
     color: var(--timer-text);
 }
 
-/* Timer Controls */
+/* Timer Controls - Responsive Layout */
 .timer-controls-display {
     margin-bottom: 2rem;
+}
+
+.timer-controls-display .d-flex {
+    min-height: 80px;
+    align-items: center;
 }
 
 .btn-control {
@@ -188,8 +197,8 @@ body {
     align-items: center;
     justify-content: center;
     font-size: 1.5rem;
-    margin: 0 10px;
     transition: all 0.3s ease;
+    flex-shrink: 0;
 }
 
 .btn-control:hover {
@@ -262,14 +271,22 @@ body {
 /* Settings Styles */
 .settings-container {
     height: 100%;
-    overflow-y: auto;
-    padding-bottom: 2rem;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 .settings-header {
     padding: 1rem 0;
     border-bottom: 1px solid var(--timer-border);
     margin-bottom: 1rem;
+    flex-shrink: 0;
+}
+
+.settings-content {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 2rem;
 }
 
 .settings-title {
@@ -279,7 +296,7 @@ body {
     margin: 0;
 }
 
-#get-pro-btn {
+#get-pro-btn, .get-pro-btn {
     border-color: var(--exercise-color);
     color: var(--exercise-color);
     font-weight: 600;
@@ -403,6 +420,36 @@ body {
     font-size: 1rem;
 }
 
+/* Pro Tab Styles */
+.pro-content {
+    padding: 2rem;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.pro-content:hover {
+    transform: scale(1.02);
+}
+
+.pro-image {
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.2s ease;
+}
+
+.pro-content:hover .pro-image {
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
+}
+
+.pro-text {
+    color: var(--timer-text);
+    font-weight: 600;
+    font-size: 1.5rem;
+    margin: 0;
+}
+
 /* Modal styling */
 .modal-content {
     background: var(--card-bg);
@@ -479,7 +526,6 @@ body {
         width: 50px;
         height: 50px;
         font-size: 1.2rem;
-        margin: 0 8px;
     }
     
     .btn-play {
@@ -496,6 +542,14 @@ body {
     .info-value {
         font-size: 1.25rem;
     }
+    
+    .timer-controls-display .d-flex {
+        gap: 0.5rem;
+    }
+    
+    .pro-text {
+        font-size: 1.25rem;
+    }
 }
 
 @media (max-width: 576px) {
@@ -507,7 +561,6 @@ body {
         width: 45px;
         height: 45px;
         font-size: 1rem;
-        margin: 0 6px;
     }
     
     .btn-play {
@@ -518,6 +571,14 @@ body {
     
     .container {
         padding: 0 15px;
+    }
+    
+    .timer-controls-display .d-flex {
+        gap: 0.25rem;
+    }
+    
+    .pro-text {
+        font-size: 1.1rem;
     }
 }
 
@@ -558,6 +619,8 @@ body {
 /* Tab content positioning fix */
 .tab-content {
     position: relative;
+    flex: 1;
+    overflow: hidden;
 }
 
 .tab-pane {
@@ -569,6 +632,7 @@ body {
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.15s ease-in-out;
+    overflow: hidden;
 }
 
 .tab-pane.active {

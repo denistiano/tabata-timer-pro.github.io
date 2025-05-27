@@ -57,6 +57,11 @@ class TabataApp {
             this.handleNext();
         });
         
+        // Pro button functionality
+        $('.get-pro-btn').on('click', () => {
+            this.showProTab();
+        });
+        
         // Timer events
         this.timer.on('onTick', (data) => {
             this.updateTimerDisplay(data);
@@ -99,6 +104,38 @@ class TabataApp {
                 this.updateDisplay();
             }
         });
+    }
+    
+    showProTab() {
+        // Hide all other tabs
+        $('.tab-pane').removeClass('show active');
+        
+        // Show pro tab
+        $('#pro').addClass('show active');
+        
+        // Update navigation to show no active tab
+        $('.nav-link').removeClass('active');
+        
+        // Add click handler to return to timer tab
+        $('#pro .pro-content').off('click').on('click', () => {
+            this.returnToTimerTab();
+        });
+        
+        console.log('Showing Pro tab');
+    }
+    
+    returnToTimerTab() {
+        // Hide all tabs
+        $('.tab-pane').removeClass('show active');
+        
+        // Show timer tab
+        $('#timer').addClass('show active');
+        
+        // Update navigation
+        $('.nav-link').removeClass('active');
+        $('#timer-tab').addClass('active');
+        
+        console.log('Returning to Timer tab');
     }
     
     handleStartPause() {
@@ -216,7 +253,7 @@ class TabataApp {
         // Update phase display
         this.updatePhaseDisplay({
             phase: this.timer.state.currentPhase,
-            label: this.timer.state.currentPhase === 'initial' ? 'Press Play To Start' : 
+            label: this.timer.state.currentPhase === 'initial' ? 'Get Ready' : 
                    this.timer.getPhases()[this.timer.state.currentPhase]?.label || 'Ready',
             color: this.timer.getPhases()[this.timer.state.currentPhase]?.color || 'prepare',
             isRunning: this.timer.state.isRunning

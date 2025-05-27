@@ -2,7 +2,7 @@
 <html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
     <title>Tabata Timer</title>
     
     <!-- Bootstrap CSS -->
@@ -51,7 +51,7 @@
                         <div class="col-lg-8 col-xl-6 d-flex flex-column">
                             <!-- Phase Indicator -->
                             <div class="phase-display text-center mb-4">
-                                <span id="phase-indicator" class="phase-indicator phase-prepare">Press Play To Start</span>
+                                <span id="phase-indicator" class="phase-indicator phase-prepare">Get Ready</span>
                             </div>
                             
                             <!-- Main Timer Display -->
@@ -81,32 +81,22 @@
                             
                             <!-- Timer Controls -->
                             <div class="timer-controls-display mb-4">
-                                <div class="row justify-content-center">
-                                    <div class="col-auto">
-                                        <button id="pause-btn" class="btn-control btn-pause" style="display: none;">
-                                            <i class="bi bi-pause-fill"></i>
-                                        </button>
-                                    </div>
-                                    <div class="col-auto">
-                                        <button id="prev-btn" class="btn-control btn-prev">
-                                            <i class="bi bi-skip-backward-fill"></i>
-                                        </button>
-                                    </div>
-                                    <div class="col-auto">
-                                        <button id="start-btn" class="btn-control btn-play">
-                                            <i class="bi bi-play-fill"></i>
-                                        </button>
-                                    </div>
-                                    <div class="col-auto">
-                                        <button id="next-btn" class="btn-control btn-next">
-                                            <i class="bi bi-skip-forward-fill"></i>
-                                        </button>
-                                    </div>
-                                    <div class="col-auto">
-                                        <button id="reset-btn" class="btn-control btn-reset">
-                                            <i class="bi bi-arrow-clockwise"></i>
-                                        </button>
-                                    </div>
+                                <div class="d-flex justify-content-center align-items-center flex-wrap gap-2">
+                                    <button id="pause-btn" class="btn-control btn-pause" style="display: none;">
+                                        <i class="bi bi-pause-fill"></i>
+                                    </button>
+                                    <button id="prev-btn" class="btn-control btn-prev">
+                                        <i class="bi bi-skip-backward-fill"></i>
+                                    </button>
+                                    <button id="start-btn" class="btn-control btn-play">
+                                        <i class="bi bi-play-fill"></i>
+                                    </button>
+                                    <button id="next-btn" class="btn-control btn-next">
+                                        <i class="bi bi-skip-forward-fill"></i>
+                                    </button>
+                                    <button id="reset-btn" class="btn-control btn-reset">
+                                        <i class="bi bi-arrow-clockwise"></i>
+                                    </button>
                                 </div>
                             </div>
                             
@@ -132,171 +122,185 @@
                             <div class="settings-container h-100">
                                 <div class="settings-header d-flex justify-content-between align-items-center mb-4">
                                     <h2 class="settings-title">Settings</h2>
-                                    <button class="btn btn-outline-danger btn-sm" id="get-pro-btn">GET PRO</button>
+                                    <button class="btn btn-outline-danger btn-sm get-pro-btn" id="get-pro-btn">GET PRO</button>
                                 </div>
                                 
-                                <form id="settings-form">
-                                    <!-- Measures Section -->
-                                    <div class="measures-section mb-4">
-                                        <h4 class="section-title mb-3">Measures</h4>
-                                        
-                                        <div class="setting-row" data-setting="initialCountdown">
-                                            <div class="setting-icon">
-                                                <i class="bi bi-clock"></i>
+                                <div class="settings-content">
+                                    <form id="settings-form">
+                                        <!-- Measures Section -->
+                                        <div class="measures-section mb-4">
+                                            <h4 class="section-title mb-3">Measures</h4>
+                                            
+                                            <div class="setting-row" data-setting="initialCountdown">
+                                                <div class="setting-icon">
+                                                    <i class="bi bi-clock"></i>
+                                                </div>
+                                                <div class="setting-content">
+                                                    <div class="setting-label">Initial Countdown</div>
+                                                    <div class="setting-value" id="initialCountdown-display">20 Seconds</div>
+                                                </div>
+                                                <div class="setting-arrow">
+                                                    <i class="bi bi-chevron-right"></i>
+                                                </div>
+                                                <input type="hidden" id="initialCountdown" value="20">
                                             </div>
-                                            <div class="setting-content">
-                                                <div class="setting-label">Initial Countdown</div>
-                                                <div class="setting-value" id="initialCountdown-display">20 Seconds</div>
+                                            
+                                            <div class="setting-row" data-setting="warmupInterval">
+                                                <div class="setting-icon warmup">
+                                                    <i class="bi bi-thermometer-half"></i>
+                                                </div>
+                                                <div class="setting-content">
+                                                    <div class="setting-label">Warmup Interval</div>
+                                                    <div class="setting-value" id="warmupInterval-display">0 Seconds</div>
+                                                </div>
+                                                <div class="setting-arrow">
+                                                    <i class="bi bi-chevron-right"></i>
+                                                </div>
+                                                <input type="hidden" id="warmupInterval" value="0">
                                             </div>
-                                            <div class="setting-arrow">
-                                                <i class="bi bi-chevron-right"></i>
+                                            
+                                            <div class="setting-row" data-setting="exerciseInterval">
+                                                <div class="setting-icon exercise">
+                                                    <i class="bi bi-lightning-fill"></i>
+                                                </div>
+                                                <div class="setting-content">
+                                                    <div class="setting-label">Exercise Interval</div>
+                                                    <div class="setting-value" id="exerciseInterval-display">180 Seconds</div>
+                                                </div>
+                                                <div class="setting-arrow">
+                                                    <i class="bi bi-chevron-right"></i>
+                                                </div>
+                                                <input type="hidden" id="exerciseInterval" value="180">
                                             </div>
-                                            <input type="hidden" id="initialCountdown" value="20">
-                                        </div>
-                                        
-                                        <div class="setting-row" data-setting="warmupInterval">
-                                            <div class="setting-icon warmup">
-                                                <i class="bi bi-thermometer-half"></i>
+                                            
+                                            <div class="setting-row" data-setting="restInterval">
+                                                <div class="setting-icon rest">
+                                                    <i class="bi bi-pause-circle"></i>
+                                                </div>
+                                                <div class="setting-content">
+                                                    <div class="setting-label">Rest Interval</div>
+                                                    <div class="setting-value" id="restInterval-display">0 Seconds</div>
+                                                </div>
+                                                <div class="setting-arrow">
+                                                    <i class="bi bi-chevron-right"></i>
+                                                </div>
+                                                <input type="hidden" id="restInterval" value="0">
                                             </div>
-                                            <div class="setting-content">
-                                                <div class="setting-label">Warmup Interval</div>
-                                                <div class="setting-value" id="warmupInterval-display">0 Seconds</div>
+                                            
+                                            <div class="setting-row" data-setting="numberOfSets">
+                                                <div class="setting-icon sets">
+                                                    <i class="bi bi-hash"></i>
+                                                </div>
+                                                <div class="setting-content">
+                                                    <div class="setting-label">Number Of Sets</div>
+                                                    <div class="setting-value" id="numberOfSets-display">1 Set</div>
+                                                </div>
+                                                <div class="setting-arrow">
+                                                    <i class="bi bi-chevron-right"></i>
+                                                </div>
+                                                <input type="hidden" id="numberOfSets" value="1">
                                             </div>
-                                            <div class="setting-arrow">
-                                                <i class="bi bi-chevron-right"></i>
+                                            
+                                            <div class="setting-row" data-setting="recoveryInterval">
+                                                <div class="setting-icon recovery">
+                                                    <i class="bi bi-heart-pulse"></i>
+                                                </div>
+                                                <div class="setting-content">
+                                                    <div class="setting-label">Recovery Interval</div>
+                                                    <div class="setting-value" id="recoveryInterval-display">120 Seconds</div>
+                                                </div>
+                                                <div class="setting-arrow">
+                                                    <i class="bi bi-chevron-right"></i>
+                                                </div>
+                                                <input type="hidden" id="recoveryInterval" value="120">
                                             </div>
-                                            <input type="hidden" id="warmupInterval" value="0">
-                                        </div>
-                                        
-                                        <div class="setting-row" data-setting="exerciseInterval">
-                                            <div class="setting-icon exercise">
-                                                <i class="bi bi-lightning-fill"></i>
+                                            
+                                            <div class="setting-row" data-setting="numberOfCycles">
+                                                <div class="setting-icon cycles">
+                                                    <i class="bi bi-arrow-repeat"></i>
+                                                </div>
+                                                <div class="setting-content">
+                                                    <div class="setting-label">Number Of Cycles</div>
+                                                    <div class="setting-value" id="numberOfCycles-display">60 Cycles</div>
+                                                </div>
+                                                <div class="setting-arrow">
+                                                    <i class="bi bi-chevron-right"></i>
+                                                </div>
+                                                <input type="hidden" id="numberOfCycles" value="60">
                                             </div>
-                                            <div class="setting-content">
-                                                <div class="setting-label">Exercise Interval</div>
-                                                <div class="setting-value" id="exerciseInterval-display">180 Seconds</div>
-                                            </div>
-                                            <div class="setting-arrow">
-                                                <i class="bi bi-chevron-right"></i>
-                                            </div>
-                                            <input type="hidden" id="exerciseInterval" value="180">
-                                        </div>
-                                        
-                                        <div class="setting-row" data-setting="restInterval">
-                                            <div class="setting-icon rest">
-                                                <i class="bi bi-pause-circle"></i>
-                                            </div>
-                                            <div class="setting-content">
-                                                <div class="setting-label">Rest Interval</div>
-                                                <div class="setting-value" id="restInterval-display">0 Seconds</div>
-                                            </div>
-                                            <div class="setting-arrow">
-                                                <i class="bi bi-chevron-right"></i>
-                                            </div>
-                                            <input type="hidden" id="restInterval" value="0">
-                                        </div>
-                                        
-                                        <div class="setting-row" data-setting="numberOfSets">
-                                            <div class="setting-icon sets">
-                                                <i class="bi bi-hash"></i>
-                                            </div>
-                                            <div class="setting-content">
-                                                <div class="setting-label">Number Of Sets</div>
-                                                <div class="setting-value" id="numberOfSets-display">1 Set</div>
-                                            </div>
-                                            <div class="setting-arrow">
-                                                <i class="bi bi-chevron-right"></i>
-                                            </div>
-                                            <input type="hidden" id="numberOfSets" value="1">
-                                        </div>
-                                        
-                                        <div class="setting-row" data-setting="recoveryInterval">
-                                            <div class="setting-icon recovery">
-                                                <i class="bi bi-heart-pulse"></i>
-                                            </div>
-                                            <div class="setting-content">
-                                                <div class="setting-label">Recovery Interval</div>
-                                                <div class="setting-value" id="recoveryInterval-display">120 Seconds</div>
-                                            </div>
-                                            <div class="setting-arrow">
-                                                <i class="bi bi-chevron-right"></i>
-                                            </div>
-                                            <input type="hidden" id="recoveryInterval" value="120">
-                                        </div>
-                                        
-                                        <div class="setting-row" data-setting="numberOfCycles">
-                                            <div class="setting-icon cycles">
-                                                <i class="bi bi-arrow-repeat"></i>
-                                            </div>
-                                            <div class="setting-content">
-                                                <div class="setting-label">Number Of Cycles</div>
-                                                <div class="setting-value" id="numberOfCycles-display">60 Cycles</div>
-                                            </div>
-                                            <div class="setting-arrow">
-                                                <i class="bi bi-chevron-right"></i>
-                                            </div>
-                                            <input type="hidden" id="numberOfCycles" value="60">
-                                        </div>
-                                        
-                                        <div class="setting-row" data-setting="cooldownInterval">
-                                            <div class="setting-icon cooldown">
-                                                <i class="bi bi-snow"></i>
-                                            </div>
-                                            <div class="setting-content">
-                                                <div class="setting-label">Cooldown Interval</div>
-                                                <div class="setting-value" id="cooldownInterval-display">0 Seconds</div>
-                                            </div>
-                                            <div class="setting-arrow">
-                                                <i class="bi bi-chevron-right"></i>
-                                            </div>
-                                            <input type="hidden" id="cooldownInterval" value="0">
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Presets Section -->
-                                    <div class="presets-section">
-                                        <h4 class="section-title mb-3">Presets</h4>
-                                        
-                                        <div class="setting-row" id="load-preset-btn">
-                                            <div class="setting-icon load">
-                                                <i class="bi bi-folder-open"></i>
-                                            </div>
-                                            <div class="setting-content">
-                                                <div class="setting-label">Load</div>
-                                                <div class="setting-sublabel">Restore Measures From A Preset</div>
-                                            </div>
-                                            <div class="setting-arrow">
-                                                <i class="bi bi-chevron-right"></i>
+                                            
+                                            <div class="setting-row" data-setting="cooldownInterval">
+                                                <div class="setting-icon cooldown">
+                                                    <i class="bi bi-snow"></i>
+                                                </div>
+                                                <div class="setting-content">
+                                                    <div class="setting-label">Cooldown Interval</div>
+                                                    <div class="setting-value" id="cooldownInterval-display">0 Seconds</div>
+                                                </div>
+                                                <div class="setting-arrow">
+                                                    <i class="bi bi-chevron-right"></i>
+                                                </div>
+                                                <input type="hidden" id="cooldownInterval" value="0">
                                             </div>
                                         </div>
                                         
-                                        <div class="setting-row" id="save-preset-btn">
-                                            <div class="setting-icon save">
-                                                <i class="bi bi-floppy"></i>
+                                        <!-- Presets Section -->
+                                        <div class="presets-section">
+                                            <h4 class="section-title mb-3">Presets</h4>
+                                            
+                                            <div class="setting-row" id="load-preset-btn">
+                                                <div class="setting-icon load">
+                                                    <i class="bi bi-folder-open"></i>
+                                                </div>
+                                                <div class="setting-content">
+                                                    <div class="setting-label">Load</div>
+                                                    <div class="setting-sublabel">Restore Measures From A Preset</div>
+                                                </div>
+                                                <div class="setting-arrow">
+                                                    <i class="bi bi-chevron-right"></i>
+                                                </div>
                                             </div>
-                                            <div class="setting-content">
-                                                <div class="setting-label">Save</div>
-                                                <div class="setting-sublabel">Save Current Measures As A Preset</div>
+                                            
+                                            <div class="setting-row" id="save-preset-btn">
+                                                <div class="setting-icon save">
+                                                    <i class="bi bi-floppy"></i>
+                                                </div>
+                                                <div class="setting-content">
+                                                    <div class="setting-label">Save</div>
+                                                    <div class="setting-sublabel">Save Current Measures As A Preset</div>
+                                                </div>
+                                                <div class="setting-arrow">
+                                                    <i class="bi bi-chevron-right"></i>
+                                                </div>
                                             </div>
-                                            <div class="setting-arrow">
-                                                <i class="bi bi-chevron-right"></i>
+                                            
+                                            <div class="setting-row" id="arrange-presets-btn">
+                                                <div class="setting-icon arrange">
+                                                    <i class="bi bi-list-ul"></i>
+                                                </div>
+                                                <div class="setting-content">
+                                                    <div class="setting-label">Arrange</div>
+                                                    <div class="setting-sublabel">Delete Or Reorder Presets</div>
+                                                </div>
+                                                <div class="setting-arrow">
+                                                    <i class="bi bi-chevron-right"></i>
+                                                </div>
                                             </div>
                                         </div>
-                                        
-                                        <div class="setting-row" id="arrange-presets-btn">
-                                            <div class="setting-icon arrange">
-                                                <i class="bi bi-list-ul"></i>
-                                            </div>
-                                            <div class="setting-content">
-                                                <div class="setting-label">Arrange</div>
-                                                <div class="setting-sublabel">Delete Or Reorder Presets</div>
-                                            </div>
-                                            <div class="setting-arrow">
-                                                <i class="bi bi-chevron-right"></i>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </form>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Pro Tab (Hidden from navigation) -->
+                <div class="tab-pane fade h-100 d-flex flex-column" id="pro" role="tabpanel">
+                    <div class="row justify-content-center h-100">
+                        <div class="col-lg-8 col-xl-6 d-flex flex-column justify-content-center align-items-center">
+                            <div class="pro-content text-center">
+                                <img src="images/pro.png" alt="Pro" class="pro-image mb-4">
+                                <h3 class="pro-text">Got 'em! There is no Pro!</h3>
                             </div>
                         </div>
                     </div>
