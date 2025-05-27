@@ -1,21 +1,16 @@
-# Screenshots
-
-<p align="center">
-  <img src="screens/screen1.png" alt="Timer Screen" width="300" />
-  <br><em>Timer Screen</em>
-</p>
-<p align="center">
-  <img src="screens/screen2.png" alt="Main Screen" width="300" />
-  <br><em>Settings Screen</em>
-</p>
-<p align="center">
-  <img src="screens/screen3.png" alt="Settings Screen" width="300" />
-  <br><em>Light Theme</em>
-</p>
-
 # Tabata Timer
 
 A minimalist single-page web application for Tabata/interval training. Built with vanilla JavaScript, jQuery, and Bootstrap 5.
+
+## Screenshots
+
+<div align="center">
+  <img src="screens/screen1.png" alt="Timer Screen" width="250" style="margin: 10px;">
+  <img src="screens/screen2.png" alt="Active Timer" width="250" style="margin: 10px;">
+  <img src="screens/screen3.png" alt="Settings Screen" width="250" style="margin: 10px;">
+</div>
+
+*Timer interface showing the main workout screen, active timer with phase indicators, and comprehensive settings panel*
 
 ## Features
 
