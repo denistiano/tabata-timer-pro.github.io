@@ -1,0 +1,605 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+type: Auto Attached
+pattern: "**/settings.js"
+description: Settings UI management and form handling for all configurable options
+---
+
+# Settings UI Management
+
+## Settings Form Structure
+Create intuitive groupings that match the mobile app interface.
+
+```html
+<!-- Settings Tab Content -->
+<div class="tab-pane fade" id="settings" role="tabpanel">
+    <!-- Measures Section -->
+    <div class="settings-section">
+        <h4 class="section-title">Measures</h4>
+        
+        <!-- Initial Countdown -->
+        <div class="setting-item">
+            <label class="form-label" for="initialCountdown">Initial Countdown</label>
+            <div class="input-group">
+                <input type="number" class="form-control" id="initialCountdown" min="0" max="60" step="1">
+                <span class="input-group-text">seconds</span>
+            </div>
+        </div>
+        
+        <!-- Warmup Interval -->
+        <div class="setting-item">
+            <label class="form-label" for="warmupInterval">Warmup Interval</label>
+            <div class="input-group">
+                <input type="number" class="form-control" id="warmupInterval" min="0" max="600" step="1">
+                <span class="input-group-text">seconds</span>
+            </div>
+        </div>
+        
+        <!-- Exercise Interval -->
+        <div class="setting-item">
+            <label class="form-label" for="exerciseInterval">Exercise Interval</label>
+            <div class="input-group">
+                <input type="number" class="form-control" id="exerciseInterval" min="1" max="3600" step="1">
+                <span class="input-group-text">seconds</span>
+            </div>
+        </div>
+        
+        <!-- Continue with other intervals... -->
+    </div>
+    
+    <!-- Sounds Section -->
+    <div class="settings-section">
+        <h4 class="section-title">Sounds</h4>
+        <!-- Sound settings... -->
+    </div>
+    
+    <!-- Voice Assist Section -->
+    <div class="settings-section">
+        <h4 class="section-title">Voice Assist</h4>
+        <!-- Voice settings... -->
+    </div>
+    
+    <!-- Display Section -->
+    <div class="settings-section">
+        <h4 class="section-title">Display</h4>
+        <!-- Display settings... -->
+    </div>
+</div>
+```
+
+## Settings Form Handler
+```javascript
+class SettingsUI {
+    constructor() {
+        this.settings = SettingsManager.loadSettings();
+        this.isInitialized = false;
+        this.validationErrors = {};
+        
+        this.init();
+    }
+    
+    init() {
+        this.bindEvents();
+        this.populateForm();
+        this.setupValidation();
+        this.isInitialized = true;
+    }
+    
+    bindEvents() {
+        // Form submission
+        $('#settings-form').on('submit', (e) => {
+            e.preventDefault();
+            this.saveSettings();
+        });
+        
+        // Real-time validation
+        $('.form-control').on('blur', (e) => {
+            this.validateField(e.target);
+        });
+        
+        // Input changes
+        $('.form-control, .form-check-input, .form-select').on('change', (e) => {
+            if (this.isInitialized) {
+                this.updateSetting(e.target);
+            }
+        });
+        
+        // Range sliders
+        $('.form-range').on('input', (e) => {
+            this.updateRangeDisplay(e.target);
+            if (this.isInitialized) {
+                this.updateSetting(e.target);
+            }
+        });
+        
+        // Reset to defaults
+        $('#reset-settings-btn').on('click', () => {
+            this.resetToDefaults();
+        });
+        
+        // Theme toggle
+        $('#theme-toggle').on('click', () => {
+            this.toggleTheme();
+        });
+    }
+}
+```
+
+## Form Population and Updates
+```javascript
+class SettingsUI {
+    populateForm() {
+        // Populate numeric inputs
+        $('#initialCountdown').val(this.settings.initialCountdown);
+        $('#warmupInterval').val(this.settings.warmupInterval);
+        $('#exerciseInterval').val(this.settings.exerciseInterval);
+        $('#restInterval').val(this.settings.restInterval);
+        $('#numberOfSets').val(this.settings.numberOfSets);
+        $('#recoveryInterval').val(this.settings.recoveryInterval);
+        $('#numberOfCycles').val(this.settings.numberOfCycles);
+        $('#cooldownInterval').val(this.settings.cooldownInterval);
+        
+        // Populate dropdowns
+        $('#intervalBeep').val(this.settings.intervalBeep);
+        $('#threeSecondBeep').val(this.settings.threeSecondBeep);
+        $('#speaker').val(this.settings.speaker);
+        $('#announceWhat').val(this.settings.announceWhat);
+        $('#timerDisplays').val(this.settings.timerDisplays);
+        
+        // Populate checkboxes
+        $('#intervalVibration').prop('checked', this.settings.intervalVibration);
+        $('#continuousBeep').prop('checked', this.settings.continuousBeep);
+        $('#halfwayBeep').prop('checked', this.settings.halfwayBeep);
+        $('#quotes').prop('checked', this.settings.quotes);
+        
+        // Update range displays
+        $('.form-range').each((index, element) => {
+            this.updateRangeDisplay(element);
+        });
+        
+        // Update theme
+        this.updateThemeDisplay();
+    }
+    
+    updateSetting(element) {
+        const $element = $(element);
+        const key = $element.attr('id');
+        let value;
+        
+        if ($element.attr('type') === 'checkbox') {
+            value = $element.prop('checked');
+        } else if ($element.attr('type') === 'number' || $element.hasClass('form-range')) {
+            value = parseInt($element.val(), 10);
+        } else {
+            value = $element.val();
+        }
+        
+        // Validate the value
+        if (!this.validateValue(key, value)) {
+            return;
+        }
+        
+        // Update settings object
+        this.settings[key] = value;
+        
+        // Save to localStorage
+        SettingsManager.saveSettings(this.settings);
+        
+        // Trigger settings changed event
+        $(document).trigger('settings:changed', { key, value });
+        
+        // Show save feedback
+        this.showSaveFeedback();
+    }
+    
+    saveSettings() {
+        const formData = new FormData($('#settings-form')[0]);
+        const newSettings = {};
+        
+        // Process form data
+        for (let [key, value] of formData.entries()) {
+            const $field = $(`#${key}`);
+            
+            if ($field.attr('type') === 'checkbox') {
+                newSettings[key] = $field.prop('checked');
+            } else if ($field.attr('type') === 'number') {
+                newSettings[key] = parseInt(value, 10);
+            } else {
+                newSettings[key] = value;
+            }
+        }
+        
+        // Validate all settings
+        const errors = SettingsManager.validateSettings(newSettings);
+        if (errors.length > 0) {
+            this.showValidationErrors(errors);
+            return;
+        }
+        
+        // Save settings
+        this.settings = { ...this.settings, ...newSettings };
+        SettingsManager.saveSettings(this.settings);
+        
+        // Show success message
+        this.showToast('Settings saved successfully!', 'success');
+        
+        // Trigger global settings update
+        $(document).trigger('settings:saved', this.settings);
+    }
+}
+```
+
+## Validation System
+```javascript
+class SettingsUI {
+    validateField(field) {
+        const $field = $(field);
+        const key = $field.attr('id');
+        const value = $field.attr('type') === 'number' ? 
+            parseInt($field.val(), 10) : $field.val();
+        
+        const isValid = this.validateValue(key, value);
+        
+        // Update UI feedback
+        if (isValid) {
+            $field.removeClass('is-invalid').addClass('is-valid');
+            this.clearFieldError(key);
+        } else {
+            $field.removeClass('is-valid').addClass('is-invalid');
+            this.showFieldError(key, this.getValidationMessage(key, value));
+        }
+        
+        return isValid;
+    }
+    
+    validateValue(key, value) {
+        switch (key) {
+            case 'exerciseInterval':
+                return value >= 1 && value <= 3600;
+            case 'numberOfCycles':
+                return value >= 1 && value <= 1000;
+            case 'numberOfSets':
+                return value >= 1 && value <= 100;
+            case 'initialCountdown':
+            case 'warmupInterval':
+            case 'restInterval':
+            case 'recoveryInterval':
+            case 'cooldownInterval':
+                return value >= 0 && value <= 3600;
+            default:
+                return true;
+        }
+    }
+    
+    getValidationMessage(key, value) {
+        switch (key) {
+            case 'exerciseInterval':
+                return 'Exercise interval must be between 1 and 3600 seconds';
+            case 'numberOfCycles':
+                return 'Number of cycles must be between 1 and 1000';
+            case 'numberOfSets':
+                return 'Number of sets must be between 1 and 100';
+            default:
+                return 'Invalid value';
+        }
+    }
+    
+    showFieldError(fieldId, message) {
+        let $feedback = $(`#${fieldId}`).siblings('.invalid-feedback');
+        if ($feedback.length === 0) {
+            $feedback = $('<div class="invalid-feedback"></div>');
+            $(`#${fieldId}`).after($feedback);
+        }
+        $feedback.text(message);
+    }
+    
+    clearFieldError(fieldId) {
+        $(`#${fieldId}`).siblings('.invalid-feedback').remove();
+    }
+}
+```
+
+## Preset Management UI
+```javascript
+class PresetManagerUI {
+    constructor() {
+        this.init();
+    }
+    
+    init() {
+        this.bindEvents();
+        this.loadPresetsList();
+    }
+    
+    bindEvents() {
+        // Save current settings as preset
+        $('#save-preset-btn').on('click', () => {
+            this.showSavePresetModal();
+        });
+        
+        // Load preset
+        $(document).on('click', '.load-preset-btn', (e) => {
+            const presetName = $(e.target).data('preset-name');
+            this.loadPreset(presetName);
+        });
+        
+        // Delete preset
+        $(document).on('click', '.delete-preset-btn', (e) => {
+            const presetName = $(e.target).data('preset-name');
+            this.deletePreset(presetName);
+        });
+        
+        // Save preset modal submit
+        $('#save-preset-form').on('submit', (e) => {
+            e.preventDefault();
+            this.saveNewPreset();
+        });
+    }
+    
+    loadPresetsList() {
+        const presets = PresetManager.loadPresets();
+        const $container = $('#presets-list');
+        
+        if (presets.length === 0) {
+            $container.html('<p class="text-muted">No presets saved yet.</p>');
+            return;
+        }
+        
+        const presetsHtml = presets.map(preset => `
+            <div class="preset-item card mb-2">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-1">${preset.name}</h6>
+                            <small class="text-muted">
+                                ${preset.settings.exerciseInterval}s exercise, 
+                                ${preset.settings.restInterval}s rest, 
+                                ${preset.settings.numberOfCycles} cycles
+                            </small>
+                        </div>
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-sm btn-outline-primary load-preset-btn" 
+                                    data-preset-name="${preset.name}">
+                                Load
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger delete-preset-btn" 
+                                    data-preset-name="${preset.name}">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+        
+        $container.html(presetsHtml);
+    }
+    
+    saveNewPreset() {
+        const name = $('#preset-name').val().trim();
+        if (!name) {
+            this.showToast('Please enter a preset name', 'error');
+            return;
+        }
+        
+        const currentSettings = SettingsManager.loadSettings();
+        const success = PresetManager.savePreset(name, currentSettings);
+        
+        if (success) {
+            this.showToast(`Preset "${name}" saved successfully!`, 'success');
+            this.loadPresetsList();
+            $('#save-preset-modal').modal('hide');
+            $('#preset-name').val('');
+        } else {
+            this.showToast('Failed to save preset', 'error');
+        }
+    }
+    
+    loadPreset(name) {
+        const settings = PresetManager.loadPreset(name);
+        if (!settings) {
+            this.showToast('Failed to load preset', 'error');
+            return;
+        }
+        
+        // Update settings and UI
+        SettingsManager.saveSettings(settings);
+        const settingsUI = new SettingsUI();
+        settingsUI.populateForm();
+        
+        this.showToast(`Preset "${name}" loaded successfully!`, 'success');
+        
+        // Trigger settings changed event
+        $(document).trigger('settings:loaded', settings);
+    }
+    
+    deletePreset(name) {
+        if (!confirm(`Are you sure you want to delete the preset "${name}"?`)) {
+            return;
+        }
+        
+        const success = PresetManager.deletePreset(name);
+        if (success) {
+            this.showToast(`Preset "${name}" deleted`, 'success');
+            this.loadPresetsList();
+        } else {
+            this.showToast('Failed to delete preset', 'error');
+        }
+    }
+}
+```
+
+## Range Slider Handling
+```javascript
+class SettingsUI {
+    updateRangeDisplay(rangeElement) {
+        const $range = $(rangeElement);
+        const value = $range.val();
+        const key = $range.attr('id');
+        
+        // Update the display label
+        const $display = $range.siblings('.range-display');
+        if ($display.length > 0) {
+            let displayText = value;
+            
+            // Format display based on setting type
+            switch (key) {
+                case 'exerciseInterval':
+                case 'restInterval':
+                case 'recoveryInterval':
+                    displayText = this.formatDuration(parseInt(value));
+                    break;
+                default:
+                    displayText = value;
+            }
+            
+            $display.text(displayText);
+        }
+    }
+    
+    formatDuration(seconds) {
+        if (seconds < 60) {
+            return `${seconds}s`;
+        } else {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return remainingSeconds > 0 ? 
+                `${minutes}m ${remainingSeconds}s` : `${minutes}m`;
+        }
+    }
+    
+    setupRangeSliders() {
+        // Create range sliders for key settings
+        const rangeSettings = [
+            { id: 'exerciseInterval', min: 5, max: 600, step: 5 },
+            { id: 'restInterval', min: 0, max: 300, step: 5 },
+            { id: 'numberOfSets', min: 1, max: 20, step: 1 },
+            { id: 'numberOfCycles', min: 1, max: 50, step: 1 }
+        ];
+        
+        rangeSettings.forEach(setting => {
+            const $input = $(`#${setting.id}`);
+            const $container = $input.closest('.setting-item');
+            
+            // Create range slider
+            const rangeHtml = `
+                <div class="range-slider-container mt-2">
+                    <input type="range" class="form-range" 
+                           id="${setting.id}-range"
+                           min="${setting.min}" 
+                           max="${setting.max}" 
+                           step="${setting.step}"
+                           value="${$input.val()}">
+                    <div class="d-flex justify-content-between">
+                        <small class="text-muted">${setting.min}</small>
+                        <small class="range-display fw-bold">${$input.val()}</small>
+                        <small class="text-muted">${setting.max}</small>
+                    </div>
+                </div>
+            `;
+            
+            $container.append(rangeHtml);
+            
+            // Sync range and input
+            const $range = $(`#${setting.id}-range`);
+            $range.on('input', () => {
+                $input.val($range.val()).trigger('change');
+                this.updateRangeDisplay($range[0]);
+            });
+            
+            $input.on('input', () => {
+                $range.val($input.val());
+                this.updateRangeDisplay($range[0]);
+            });
+        });
+    }
+}
+```
+
+## Toast Notifications and Feedback
+```javascript
+class SettingsUI {
+    showToast(message, type = 'info') {
+        const toastHtml = `
+            <div class="toast align-items-center text-bg-${type} border-0" role="alert">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" 
+                            data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+        `;
+        
+        const $toast = $(toastHtml);
+        $('#toast-container').append($toast);
+        
+        const toast = new bootstrap.Toast($toast[0]);
+        toast.show();
+        
+        // Remove from DOM after hiding
+        $toast.on('hidden.bs.toast', () => {
+            $toast.remove();
+        });
+    }
+    
+    showSaveFeedback() {
+        const $feedback = $('#save-feedback');
+        if ($feedback.length === 0) {
+            $('#settings-form').prepend(`
+                <div id="save-feedback" class="alert alert-success alert-dismissible fade show" role="alert">
+                    Settings saved automatically!
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `);
+            
+            // Auto-hide after 3 seconds
+            setTimeout(() => {
+                $('#save-feedback').fadeOut(() => {
+                    $('#save-feedback').remove();
+                });
+            }, 3000);
+        }
+    }
+    
+    resetToDefaults() {
+        if (!confirm('Are you sure you want to reset all settings to defaults?')) {
+            return;
+        }
+        
+        SettingsManager.resetSettings();
+        this.settings = SettingsManager.loadSettings();
+        this.populateForm();
+        
+        this.showToast('Settings reset to defaults', 'info');
+        $(document).trigger('settings:reset', this.settings);
+    }
+    
+    toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        
+        this.updateThemeDisplay();
+        this.showToast(`Switched to ${newTheme} theme`, 'info');
+    }
+    
+    updateThemeDisplay() {
+        const theme = localStorage.getItem('theme') || 'light';
+        const $toggle = $('#theme-toggle');
+        
+        if (theme === 'dark') {
+            $toggle.html('<i class="bi bi-sun-fill"></i> Light Mode');
+        } else {
+            $toggle.html('<i class="bi bi-moon-fill"></i> Dark Mode');
+        }
+    }
+}
+```

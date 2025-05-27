@@ -1,0 +1,435 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+type: Auto Attached
+pattern: "**/timer.js"
+description: Core timer functionality and phase management for Tabata intervals
+---
+
+# Timer Functionality
+
+## Timer Phases and Flow
+```
+Initial Countdown → Warmup → [Exercise → Rest] × Sets → Recovery → Next Cycle → Cooldown
+```
+
+## Timer State Management
+```javascript
+class TabataTimer {
+    constructor(settings) {
+        this.settings = settings;
+        this.state = {
+            isRunning: false,
+            isPaused: false,
+            currentPhase: 'initial',  // initial, warmup, exercise, rest, recovery, cooldown, complete
+            timeRemaining: 0,
+            currentCycle: 1,
+            currentSet: 1,
+            totalElapsed: 0,
+            startTime: null
+        };
+        
+        this.intervalId = null;
+        this.callbacks = {
+            onTick: [],
+            onPhaseChange: [],
+            onComplete: [],
+            onSound: []
+        };
+    }
+    
+    // Phase definitions
+    getPhases() {
+        return {
+            initial: {
+                duration: this.settings.initialCountdown,
+                color: '--prepare-color',
+                label: 'Get Ready',
+                next: 'warmup'
+            },
+            warmup: {
+                duration: this.settings.warmupInterval,
+                color: '--prepare-color',
+                label: 'Warm Up',
+                next: 'exercise'
+            },
+            exercise: {
+                duration: this.settings.exerciseInterval,
+                color: '--exercise-color',
+                label: 'Exercise',
+                next: 'rest'
+            },
+            rest: {
+                duration: this.settings.restInterval,
+                color: '--rest-color',
+                label: 'Rest',
+                next: this.shouldMoveToRecovery() ? 'recovery' : 'exercise'
+            },
+            recovery: {
+                duration: this.settings.recoveryInterval,
+                color: '--rest-color',
+                label: 'Recovery',
+                next: this.shouldMoveToNextCycle() ? 'exercise' : 'cooldown'
+            },
+            cooldown: {
+                duration: this.settings.cooldownInterval,
+                color: '--prepare-color',
+                label: 'Cool Down',
+                next: 'complete'
+            }
+        };
+    }
+}
+```
+
+## Core Timer Methods
+```javascript
+class TabataTimer {
+    start() {
+        if (this.state.isRunning) return;
+        
+        this.state.isRunning = true;
+        this.state.isPaused = false;
+        this.state.startTime = Date.now();
+        
+        // Initialize first phase
+        if (this.state.currentPhase === 'initial') {
+            this.initializePhase('initial');
+        }
+        
+        // Start the timer loop
+        this.intervalId = setInterval(() => {
+            this.tick();
+        }, 100); // Update every 100ms for smooth display
+        
+        this.emit('start');
+    }
+    
+    pause() {
+        if (!this.state.isRunning) return;
+        
+        this.state.isPaused = true;
+        this.state.isRunning = false;
+        
+        if (this.intervalId) {
+            clearInterval(this.intervalId);
+            this.intervalId = null;
+        }
+        
+        this.emit('pause');
+    }
+    
+    resume() {
+        if (!this.state.isPaused) return;
+        
+        this.state.isRunning = true;
+        this.state.isPaused = false;
+        
+        this.intervalId = setInterval(() => {
+            this.tick();
+        }, 100);
+        
+        this.emit('resume');
+    }
+    
+    stop() {
+        this.state.isRunning = false;
+        this.state.isPaused = false;
+        
+        if (this.intervalId) {
+            clearInterval(this.intervalId);
+            this.intervalId = null;
+        }
+        
+        this.emit('stop');
+        this.reset();
+    }
+    
+    reset() {
+        this.state = {
+            isRunning: false,
+            isPaused: false,
+            currentPhase: 'initial',
+            timeRemaining: 0,
+            currentCycle: 1,
+            currentSet: 1,
+            totalElapsed: 0,
+            startTime: null
+        };
+        
+        this.emit('reset');
+    }
+}
+```
+
+## Timer Logic and Phase Transitions
+```javascript
+class TabataTimer {
+    tick() {
+        const now = Date.now();
+        const elapsed = now - this.state.startTime;
+        
+        // Update time remaining
+        this.state.timeRemaining -= 100;
+        this.state.totalElapsed = elapsed;
+        
+        // Check for sound cues
+        this.checkSoundCues();
+        
+        // Check phase transition
+        if (this.state.timeRemaining <= 0) {
+            this.nextPhase();
+        }
+        
+        // Emit tick event
+        this.emit('tick', {
+            timeRemaining: this.state.timeRemaining,
+            phase: this.state.currentPhase,
+            progress: this.getProgress()
+        });
+    }
+    
+    nextPhase() {
+        const phases = this.getPhases();
+        const currentPhase = phases[this.state.currentPhase];
+        
+        if (!currentPhase) {
+            this.complete();
+            return;
+        }
+        
+        const nextPhaseName = currentPhase.next;
+        
+        // Handle phase-specific logic
+        switch (this.state.currentPhase) {
+            case 'exercise':
+                this.state.currentSet++;
+                break;
+            case 'rest':
+                if (this.shouldMoveToRecovery()) {
+                    this.state.currentSet = 1;
+                }
+                break;
+            case 'recovery':
+                this.state.currentCycle++;
+                this.state.currentSet = 1;
+                break;
+        }
+        
+        // Move to next phase
+        if (nextPhaseName === 'complete') {
+            this.complete();
+        } else {
+            this.initializePhase(nextPhaseName);
+        }
+    }
+    
+    initializePhase(phaseName) {
+        const phases = this.getPhases();
+        const phase = phases[phaseName];
+        
+        if (!phase || phase.duration <= 0) {
+            // Skip phases with 0 duration
+            const nextPhase = phases[phase.next];
+            if (nextPhase) {
+                this.initializePhase(phase.next);
+                return;
+            }
+        }
+        
+        this.state.currentPhase = phaseName;
+        this.state.timeRemaining = phase.duration * 1000; // Convert to milliseconds
+        
+        this.emit('phaseChange', {
+            phase: phaseName,
+            label: phase.label,
+            duration: phase.duration,
+            color: phase.color
+        });
+    }
+    
+    shouldMoveToRecovery() {
+        return this.state.currentSet >= this.settings.numberOfSets;
+    }
+    
+    shouldMoveToNextCycle() {
+        return this.state.currentCycle < this.settings.numberOfCycles;
+    }
+    
+    complete() {
+        this.state.isRunning = false;
+        this.state.currentPhase = 'complete';
+        
+        if (this.intervalId) {
+            clearInterval(this.intervalId);
+            this.intervalId = null;
+        }
+        
+        this.emit('complete', {
+            totalTime: this.state.totalElapsed,
+            completedCycles: this.state.currentCycle,
+            completedSets: this.state.currentSet - 1
+        });
+    }
+}
+```
+
+## Sound and Notification System
+```javascript
+class TabataTimer {
+    checkSoundCues() {
+        const remaining = Math.ceil(this.state.timeRemaining / 1000);
+        
+        // Three second countdown
+        if (remaining === 3 && this.settings.threeSecondBeep !== 'off') {
+            this.playSound(this.settings.threeSecondBeep);
+        }
+        
+        // Halfway point
+        if (this.settings.halfwayBeep && this.isHalfwayPoint()) {
+            this.playSound('halfway');
+        }
+        
+        // Phase transition
+        if (remaining === 0) {
+            this.playSound(this.settings.intervalBeep);
+            this.announcePhaseChange();
+        }
+        
+        // Continuous beep during last 10 seconds
+        if (this.settings.continuousBeep && remaining <= 10 && remaining > 0) {
+            if (this.state.timeRemaining % 1000 < 100) { // Once per second
+                this.playSound('tick');
+            }
+        }
+    }
+    
+    playSound(soundName) {
+        if (!soundName || soundName === 'off') return;
+        
+        this.emit('sound', { name: soundName });
+        
+        // Vibration support
+        if (this.settings.intervalVibration && 'vibrate' in navigator) {
+            navigator.vibrate(200);
+        }
+    }
+    
+    announcePhaseChange() {
+        if (this.settings.announceWhat === 'off') return;
+        
+        const phases = this.getPhases();
+        const nextPhase = phases[this.getNextPhaseName()];
+        
+        if (nextPhase) {
+            this.emit('announce', {
+                text: nextPhase.label,
+                phase: this.getNextPhaseName()
+            });
+        }
+    }
+    
+    isHalfwayPoint() {
+        const phases = this.getPhases();
+        const currentPhase = phases[this.state.currentPhase];
+        if (!currentPhase) return false;
+        
+        const halfDuration = (currentPhase.duration * 1000) / 2;
+        const elapsed = (currentPhase.duration * 1000) - this.state.timeRemaining;
+        
+        return Math.abs(elapsed - halfDuration) < 100; // Within 100ms tolerance
+    }
+}
+```
+
+## Progress Calculation and Display
+```javascript
+class TabataTimer {
+    getProgress() {
+        const totalCycles = this.settings.numberOfCycles;
+        const totalSets = this.settings.numberOfSets;
+        
+        // Calculate overall progress
+        const cycleProgress = (this.state.currentCycle - 1) / totalCycles;
+        const setProgress = (this.state.currentSet - 1) / totalSets;
+        const overallProgress = cycleProgress + (setProgress / totalCycles);
+        
+        return {
+            overall: Math.min(overallProgress * 100, 100),
+            cycle: ((this.state.currentCycle - 1) / totalCycles) * 100,
+            set: ((this.state.currentSet - 1) / totalSets) * 100,
+            phase: this.getPhaseProgress()
+        };
+    }
+    
+    getPhaseProgress() {
+        const phases = this.getPhases();
+        const currentPhase = phases[this.state.currentPhase];
+        if (!currentPhase) return 0;
+        
+        const elapsed = (currentPhase.duration * 1000) - this.state.timeRemaining;
+        return (elapsed / (currentPhase.duration * 1000)) * 100;
+    }
+    
+    formatTime(milliseconds) {
+        const totalSeconds = Math.ceil(milliseconds / 1000);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        
+        return {
+            minutes: minutes.toString().padStart(2, '0'),
+            seconds: seconds.toString().padStart(2, '0'),
+            display: `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+        };
+    }
+    
+    getTimeDisplay() {
+        switch (this.settings.timerDisplays) {
+            case 'count_up':
+                const phases = this.getPhases();
+                const currentPhase = phases[this.state.currentPhase];
+                const elapsed = (currentPhase.duration * 1000) - this.state.timeRemaining;
+                return this.formatTime(elapsed);
+            case 'count_down':
+            default:
+                return this.formatTime(this.state.timeRemaining);
+        }
+    }
+}
+```
+
+## Event System
+```javascript
+class TabataTimer {
+    on(event, callback) {
+        if (!this.callbacks[event]) {
+            this.callbacks[event] = [];
+        }
+        this.callbacks[event].push(callback);
+    }
+    
+    off(event, callback) {
+        if (!this.callbacks[event]) return;
+        
+        const index = this.callbacks[event].indexOf(callback);
+        if (index > -1) {
+            this.callbacks[event].splice(index, 1);
+        }
+    }
+    
+    emit(event, data = {}) {
+        if (!this.callbacks[event]) return;
+        
+        this.callbacks[event].forEach(callback => {
+            try {
+                callback(data);
+            } catch (error) {
+                console.error(`Error in timer callback for ${event}:`, error);
+            }
+        });
+    }
+}
+```

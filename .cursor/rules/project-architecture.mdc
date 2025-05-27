@@ -1,0 +1,61 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+type: Always
+description: Core project architecture and structure guidelines for Tabata Timer web app
+---
+
+# Tabata Timer - Project Architecture
+
+## Project Overview
+Single-page web application for Tabata/interval training timer. Built with vanilla JavaScript, jQuery, and Bootstrap. No backend required - everything runs in the browser.
+
+## File Structure (Keep Minimal)
+```
+index.html          # Single HTML file with all content
+css/
+  styles.css         # Custom styles and theme variables
+js/
+  app.js            # Main application logic
+  timer.js          # Timer functionality
+  settings.js       # Settings management
+  storage.js        # LocalStorage utilities
+assets/
+  sounds/           # Audio files for beeps/notifications
+```
+
+## Core Requirements
+- **Single Page Application**: Use Bootstrap tabs for navigation
+- **No Backend**: All functionality client-side
+- **LocalStorage**: Persist all settings, presets, and state
+- **Responsive**: Mobile-first design
+- **Accessibility**: Proper ARIA labels and keyboard navigation
+- **Performance**: Lightweight, fast loading
+
+## Technology Stack
+- **HTML5**: Semantic markup
+- **Bootstrap 5**: UI framework and responsive grid
+- **jQuery 3.x**: DOM manipulation and events
+- **Vanilla JS**: Core timer logic and calculations
+- **CSS3**: Custom theming and animations
+- **Web Audio API**: Sound notifications
+
+## Architecture Principles
+1. **Minimalism**: Fewer files, simpler code
+2. **Readability**: Clear function names and comments
+3. **Maintainability**: Modular, well-organized code
+4. **Performance**: Efficient DOM manipulation
+5. **User Experience**: Smooth animations and feedback
+
+## Key Features to Implement
+- Interval timer with customizable phases
+- Settings persistence via LocalStorage
+- Preset saving/loading system
+- Dark/light theme switching
+- Audio notifications and voice guidance
+- Progress tracking and statistics
+- Quote display system
+- Responsive design for all devices

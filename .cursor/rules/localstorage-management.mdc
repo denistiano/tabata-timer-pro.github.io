@@ -1,0 +1,336 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+type: Agent Requested
+description: LocalStorage utilities and data persistence patterns for settings and state management
+---
+
+# LocalStorage Management
+
+## Storage Structure
+Organize data with consistent key naming and structure.
+
+```javascript
+// Storage keys - use consistent naming convention
+const STORAGE_KEYS = {
+    SETTINGS: 'tabata_settings',
+    PRESETS: 'tabata_presets', 
+    THEME: 'tabata_theme',
+    LAST_WORKOUT: 'tabata_last_workout',
+    STATISTICS: 'tabata_statistics',
+    QUOTES: 'tabata_quotes'
+};
+
+// Default settings object
+const DEFAULT_SETTINGS = {
+    initialCountdown: 20,      // seconds
+    warmupInterval: 0,         // seconds
+    exerciseInterval: 180,     // seconds (3 minutes)
+    restInterval: 0,           // seconds
+    numberOfSets: 1,
+    recoveryInterval: 120,     // seconds (2 minutes)
+    numberOfCycles: 60,
+    cooldownInterval: 0,       // seconds
+    
+    // Sound settings
+    intervalBeep: 'click',
+    intervalVibration: false,
+    continuousBeep: false,
+    threeSecondBeep: 'short_beep',
+    halfwayBeep: false,
+    
+    // Voice settings
+    speaker: 'english_american',
+    announceWhat: 'all',
+    
+    // Display settings
+    theme: 'light',
+    timerDisplays: 'count_down',
+    quotes: true
+};
+```
+
+## Storage Utility Class
+```javascript
+class StorageManager {
+    static save(key, data) {
+        try {
+            const serialized = JSON.stringify(data);
+            localStorage.setItem(key, serialized);
+            return true;
+        } catch (error) {
+            console.error('Failed to save to localStorage:', error);
+            return false;
+        }
+    }
+    
+    static load(key, defaultValue = null) {
+        try {
+            const item = localStorage.getItem(key);
+            return item ? JSON.parse(item) : defaultValue;
+        } catch (error) {
+            console.error('Failed to load from localStorage:', error);
+            return defaultValue;
+        }
+    }
+    
+    static remove(key) {
+        try {
+            localStorage.removeItem(key);
+            return true;
+        } catch (error) {
+            console.error('Failed to remove from localStorage:', error);
+            return false;
+        }
+    }
+    
+    static clear() {
+        try {
+            // Only clear app-specific keys
+            Object.values(STORAGE_KEYS).forEach(key => {
+                localStorage.removeItem(key);
+            });
+            return true;
+        } catch (error) {
+            console.error('Failed to clear localStorage:', error);
+            return false;
+        }
+    }
+    
+    static getStorageSize() {
+        let total = 0;
+        Object.values(STORAGE_KEYS).forEach(key => {
+            const item = localStorage.getItem(key);
+            if (item) {
+                total += item.length;
+            }
+        });
+        return total;
+    }
+}
+```
+
+## Settings Management
+```javascript
+class SettingsManager {
+    static loadSettings() {
+        const saved = StorageManager.load(STORAGE_KEYS.SETTINGS);
+        return { ...DEFAULT_SETTINGS, ...saved };
+    }
+    
+    static saveSettings(settings) {
+        return StorageManager.save(STORAGE_KEYS.SETTINGS, settings);
+    }
+    
+    static resetSettings() {
+        return StorageManager.save(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS);
+    }
+    
+    static updateSetting(key, value) {
+        const settings = this.loadSettings();
+        settings[key] = value;
+        return this.saveSettings(settings);
+    }
+    
+    static validateSettings(settings) {
+        const errors = [];
+        
+        // Validate time intervals
+        if (settings.exerciseInterval < 1 || settings.exerciseInterval > 3600) {
+            errors.push('Exercise interval must be between 1 and 3600 seconds');
+        }
+        
+        if (settings.numberOfCycles < 1 || settings.numberOfCycles > 1000) {
+            errors.push('Number of cycles must be between 1 and 1000');
+        }
+        
+        if (settings.numberOfSets < 1 || settings.numberOfSets > 100) {
+            errors.push('Number of sets must be between 1 and 100');
+        }
+        
+        return errors;
+    }
+}
+```
+
+## Preset Management
+```javascript
+class PresetManager {
+    static loadPresets() {
+        return StorageManager.load(STORAGE_KEYS.PRESETS, []);
+    }
+    
+    static savePreset(name, settings) {
+        const presets = this.loadPresets();
+        const existingIndex = presets.findIndex(p => p.name === name);
+        
+        const preset = {
+            name: name,
+            settings: { ...settings },
+            createdAt: new Date().toISOString(),
+            lastUsed: null
+        };
+        
+        if (existingIndex >= 0) {
+            presets[existingIndex] = preset;
+        } else {
+            presets.push(preset);
+        }
+        
+        return StorageManager.save(STORAGE_KEYS.PRESETS, presets);
+    }
+    
+    static deletePreset(name) {
+        const presets = this.loadPresets();
+        const filtered = presets.filter(p => p.name !== name);
+        return StorageManager.save(STORAGE_KEYS.PRESETS, filtered);
+    }
+    
+    static loadPreset(name) {
+        const presets = this.loadPresets();
+        const preset = presets.find(p => p.name === name);
+        
+        if (preset) {
+            // Update last used timestamp
+            preset.lastUsed = new Date().toISOString();
+            StorageManager.save(STORAGE_KEYS.PRESETS, presets);
+            return preset.settings;
+        }
+        
+        return null;
+    }
+    
+    static getPresetNames() {
+        return this.loadPresets().map(p => p.name).sort();
+    }
+}
+```
+
+## Workout Statistics
+```javascript
+class StatisticsManager {
+    static recordWorkout(workoutData) {
+        const stats = this.loadStatistics();
+        
+        const workout = {
+            id: Date.now(),
+            date: new Date().toISOString(),
+            duration: workoutData.totalTime,
+            cycles: workoutData.completedCycles,
+            sets: workoutData.completedSets,
+            settings: { ...workoutData.settings }
+        };
+        
+        stats.workouts.push(workout);
+        stats.totalWorkouts++;
+        stats.totalTime += workoutData.totalTime;
+        stats.lastWorkout = workout.date;
+        
+        // Keep only last 100 workouts
+        if (stats.workouts.length > 100) {
+            stats.workouts = stats.workouts.slice(-100);
+        }
+        
+        return StorageManager.save(STORAGE_KEYS.STATISTICS, stats);
+    }
+    
+    static loadStatistics() {
+        return StorageManager.load(STORAGE_KEYS.STATISTICS, {
+            totalWorkouts: 0,
+            totalTime: 0,
+            lastWorkout: null,
+            workouts: []
+        });
+    }
+    
+    static getLastWorkoutDate() {
+        const stats = this.loadStatistics();
+        if (!stats.lastWorkout) return null;
+        
+        const lastDate = new Date(stats.lastWorkout);
+        const today = new Date();
+        const diffTime = Math.abs(today - lastDate);
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        
+        return diffDays;
+    }
+}
+```
+
+## State Management for Timer
+```javascript
+class TimerStateManager {
+    static saveTimerState(state) {
+        return StorageManager.save('tabata_timer_state', {
+            isRunning: state.isRunning,
+            currentPhase: state.currentPhase,
+            timeRemaining: state.timeRemaining,
+            currentCycle: state.currentCycle,
+            currentSet: state.currentSet,
+            totalElapsed: state.totalElapsed,
+            savedAt: Date.now()
+        });
+    }
+    
+    static loadTimerState() {
+        const state = StorageManager.load('tabata_timer_state');
+        
+        // Only restore state if saved recently (within 1 hour)
+        if (state && (Date.now() - state.savedAt) < 3600000) {
+            return state;
+        }
+        
+        return null;
+    }
+    
+    static clearTimerState() {
+        return StorageManager.remove('tabata_timer_state');
+    }
+}
+```
+
+## Error Handling & Recovery
+```javascript
+// Handle localStorage quota exceeded
+function handleStorageError(error) {
+    if (error.name === 'QuotaExceededError') {
+        console.warn('localStorage quota exceeded, clearing old data');
+        
+        // Clear workout history to free space
+        const stats = StatisticsManager.loadStatistics();
+        stats.workouts = stats.workouts.slice(-10); // Keep only last 10
+        StorageManager.save(STORAGE_KEYS.STATISTICS, stats);
+        
+        return true;
+    }
+    
+    return false;
+}
+
+// Backup critical data
+function createBackup() {
+    const backup = {
+        settings: SettingsManager.loadSettings(),
+        presets: PresetManager.loadPresets(),
+        timestamp: new Date().toISOString()
+    };
+    
+    return JSON.stringify(backup);
+}
+
+// Restore from backup
+function restoreFromBackup(backupData) {
+    try {
+        const data = JSON.parse(backupData);
+        SettingsManager.saveSettings(data.settings);
+        StorageManager.save(STORAGE_KEYS.PRESETS, data.presets);
+        return true;
+    } catch (error) {
+        console.error('Failed to restore backup:', error);
+        return false;
+    }
+}
+```

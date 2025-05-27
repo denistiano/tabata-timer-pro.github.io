@@ -1,0 +1,162 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+type: Auto Attached
+pattern: "**/*.js"
+description: JavaScript and jQuery coding standards for Tabata Timer app
+---
+
+# JavaScript & jQuery Best Practices
+
+## Code Style Guidelines
+- Use `const` and `let` instead of `var`
+- Prefer arrow functions for callbacks
+- Use template literals for string interpolation
+- Add semicolons consistently
+- Use camelCase for variables and functions
+- Use PascalCase for constructors/classes
+
+## jQuery Best Practices
+```javascript
+// Cache jQuery selectors
+const $startBtn = $('#start-btn');
+const $timerDisplay = $('#timer-display');
+
+// Use event delegation for dynamic content
+$(document).on('click', '.preset-btn', function() {
+    // Handle preset click
+});
+
+// Avoid DOM queries in loops
+const items = $('.timer-item');
+items.each(function() {
+    // Process each item
+});
+```
+
+## Timer Implementation Guidelines
+```javascript
+// Use Web Workers for accurate timing if needed
+// Prefer requestAnimationFrame for smooth animations
+// Always clear intervals/timeouts on component cleanup
+
+class TabataTimer {
+    constructor() {
+        this.intervalId = null;
+        this.currentPhase = 'prepare';
+        this.timeRemaining = 0;
+    }
+    
+    start() {
+        this.intervalId = setInterval(() => {
+            this.tick();
+        }, 100); // 100ms for smooth updates
+    }
+    
+    stop() {
+        if (this.intervalId) {
+            clearInterval(this.intervalId);
+            this.intervalId = null;
+        }
+    }
+    
+    tick() {
+        this.timeRemaining -= 100;
+        this.updateDisplay();
+        this.checkPhaseTransition();
+    }
+}
+```
+
+## Event Handling Patterns
+```javascript
+// Namespace events to avoid conflicts
+$element.on('click.tabata', handler);
+
+// Use custom events for component communication
+$(document).trigger('timer:start', { phase: 'exercise' });
+$(document).on('timer:complete', function(e, data) {
+    // Handle timer completion
+});
+
+// Debounce user inputs
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+```
+
+## Error Handling
+```javascript
+// Wrap audio operations in try-catch
+function playSound(soundName) {
+    try {
+        const audio = new Audio(`assets/sounds/${soundName}.mp3`);
+        audio.play().catch(err => {
+            console.warn('Audio playback failed:', err);
+        });
+    } catch (error) {
+        console.error('Audio initialization failed:', error);
+    }
+}
+
+// Validate user inputs
+function validateInterval(value) {
+    const num = parseInt(value, 10);
+    return !isNaN(num) && num >= 0 && num <= 3600; // Max 1 hour
+}
+```
+
+## Performance Optimization
+- Minimize DOM queries - cache selectors
+- Use event delegation for dynamic elements
+- Debounce frequent events (resize, input)
+- Batch DOM updates using DocumentFragment
+- Use CSS classes instead of direct style manipulation
+- Clean up event listeners and intervals on page unload
+
+## Module Pattern
+```javascript
+const TabataApp = (function($) {
+    'use strict';
+    
+    // Private variables
+    let settings = {};
+    let timer = null;
+    
+    // Private methods
+    function init() {
+        bindEvents();
+        loadSettings();
+        setupTheme();
+    }
+    
+    function bindEvents() {
+        $('#start-btn').on('click', startTimer);
+        $('#settings-form').on('submit', saveSettings);
+    }
+    
+    // Public API
+    return {
+        init: init,
+        startTimer: startTimer,
+        stopTimer: stopTimer
+    };
+    
+})(jQuery);
+
+// Initialize app when DOM ready
+$(document).ready(function() {
+    TabataApp.init();
+});
+```

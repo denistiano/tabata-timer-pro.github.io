@@ -1,0 +1,270 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+type: Auto Attached
+pattern: "**/*.{css,html}"
+description: Bootstrap styling and theming guidelines for dark/light mode support
+---
+
+# Bootstrap Styling & Theming
+
+## Theme Implementation Strategy
+Use CSS custom properties (variables) for theme switching with Bootstrap 5.
+
+```css
+:root {
+    /* Light theme (default) */
+    --bs-body-bg: #ffffff;
+    --bs-body-color: #212529;
+    --bs-primary: #0d6efd;
+    --bs-secondary: #6c757d;
+    --bs-success: #198754;
+    --bs-warning: #ffc107;
+    --bs-danger: #dc3545;
+    --bs-info: #0dcaf0;
+    
+    /* Timer specific variables */
+    --timer-bg: #f8f9fa;
+    --timer-text: #495057;
+    --timer-border: #dee2e6;
+    --exercise-color: #ff6b35;
+    --rest-color: #4ecdc4;
+    --prepare-color: #ffa726;
+}
+
+[data-theme="dark"] {
+    /* Dark theme overrides */
+    --bs-body-bg: #121212;
+    --bs-body-color: #ffffff;
+    --bs-primary: #0d6efd;
+    --bs-secondary: #6c757d;
+    
+    /* Timer specific dark variables */
+    --timer-bg: #1e1e1e;
+    --timer-text: #ffffff;
+    --timer-border: #404040;
+}
+```
+
+## Bootstrap Component Customization
+```css
+/* Custom button styles */
+.btn-timer-start {
+    background: linear-gradient(45deg, var(--exercise-color), #ff8a65);
+    border: none;
+    border-radius: 50px;
+    padding: 15px 30px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+    transition: all 0.3s ease;
+}
+
+.btn-timer-start:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+}
+
+/* Timer display styling */
+.timer-display {
+    background: var(--timer-bg);
+    border: 2px solid var(--timer-border);
+    border-radius: 20px;
+    padding: 2rem;
+    text-align: center;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.timer-digits {
+    font-family: 'SF Mono', 'Monaco', 'Cascadia Code', monospace;
+    font-size: 4rem;
+    font-weight: 300;
+    color: var(--timer-text);
+    line-height: 1;
+}
+
+/* Phase indicators */
+.phase-indicator {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 25px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.phase-exercise {
+    background: var(--exercise-color);
+    color: white;
+}
+
+.phase-rest {
+    background: var(--rest-color);
+    color: white;
+}
+
+.phase-prepare {
+    background: var(--prepare-color);
+    color: white;
+}
+```
+
+## Responsive Design
+```css
+/* Mobile-first approach */
+@media (max-width: 768px) {
+    .timer-digits {
+        font-size: 2.5rem;
+    }
+    
+    .timer-display {
+        padding: 1rem;
+        margin: 1rem 0;
+    }
+    
+    .btn-timer-start {
+        width: 100%;
+        margin: 1rem 0;
+    }
+}
+
+@media (max-width: 576px) {
+    .container {
+        padding: 0 10px;
+    }
+    
+    .timer-digits {
+        font-size: 2rem;
+    }
+}
+```
+
+## Bootstrap Tab Styling
+```css
+/* Custom tab styling */
+.nav-tabs {
+    border-bottom: 2px solid var(--timer-border);
+    margin-bottom: 2rem;
+}
+
+.nav-tabs .nav-link {
+    border: none;
+    border-radius: 0;
+    color: var(--bs-body-color);
+    font-weight: 500;
+    padding: 1rem 1.5rem;
+    position: relative;
+}
+
+.nav-tabs .nav-link:hover {
+    border: none;
+    background: rgba(13, 110, 253, 0.1);
+}
+
+.nav-tabs .nav-link.active {
+    background: transparent;
+    border: none;
+    color: var(--bs-primary);
+}
+
+.nav-tabs .nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--bs-primary);
+}
+```
+
+## Form Controls
+```css
+/* Settings form styling */
+.form-control {
+    background: var(--timer-bg);
+    border: 1px solid var(--timer-border);
+    color: var(--timer-text);
+    border-radius: 8px;
+    padding: 12px 16px;
+}
+
+.form-control:focus {
+    background: var(--timer-bg);
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    color: var(--timer-text);
+}
+
+.form-label {
+    color: var(--timer-text);
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+/* Range inputs for sliders */
+.form-range {
+    background: transparent;
+}
+
+.form-range::-webkit-slider-track {
+    background: var(--timer-border);
+    border-radius: 10px;
+    height: 6px;
+}
+
+.form-range::-webkit-slider-thumb {
+    background: var(--bs-primary);
+    border-radius: 50%;
+    height: 20px;
+    width: 20px;
+}
+```
+
+## Animation Classes
+```css
+/* Smooth transitions */
+.timer-transition {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pulse-animation {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+```
+
+## Theme Toggle Implementation
+```javascript
+// Theme switching logic
+function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+}
+
+// Apply saved theme on load
+function applySavedTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+}
+```

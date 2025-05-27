@@ -1,0 +1,555 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+type: Always
+description: Main application initialization, tab management, and global coordination
+---
+
+# Application Initialization & Coordination
+
+## Main App Structure
+Single-page application with Bootstrap tabs for navigation between Timer, Settings, and Statistics views.
+
+```html
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabata Timer</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link href="css/styles.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- Navigation Tabs -->
+        <nav class="navbar navbar-expand-lg">
+            <div class="container">
+                <span class="navbar-brand">Tabata Timer</span>
+                <ul class="nav nav-tabs" id="main-tabs" role="tablist">
+                    <li class="nav-item">
+                        <button class="nav-link active" id="timer-tab" data-bs-toggle="tab" 
+                                data-bs-target="#timer" type="button" role="tab">
+                            <i class="bi bi-stopwatch"></i> Timer
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" id="settings-tab" data-bs-toggle="tab" 
+                                data-bs-target="#settings" type="button" role="tab">
+                            <i class="bi bi-gear"></i> Settings
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" id="statistics-tab" data-bs-toggle="tab" 
+                                data-bs-target="#statistics" type="button" role="tab">
+                            <i class="bi bi-graph-up"></i> Stats
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+        
+        <!-- Tab Content -->
+        <div class="tab-content" id="main-tab-content">
+            <div class="tab-pane fade show active" id="timer" role="tabpanel">
+                <!-- Timer UI -->
+            </div>
+            <div class="tab-pane fade" id="settings" role="tabpanel">
+                <!-- Settings UI -->
+            </div>
+            <div class="tab-pane fade" id="statistics" role="tabpanel">
+                <!-- Statistics UI -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast Container -->
+    <div id="toast-container" class="position-fixed top-0 end-0 p-3" style="z-index: 11"></div>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/timer.js"></script>
+    <script src="js/settings.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
+```
+
+## Main Application Class
+```javascript
+class TabataApp {
+    constructor() {
+        this.timer = null;
+        this.settingsUI = null;
+        this.currentQuote = null;
+        this.isInitialized = false;
+        
+        // Bind methods to preserve context
+        this.onTimerTick = this.onTimerTick.bind(this);
+        this.onTimerPhaseChange = this.onTimerPhaseChange.bind(this);
+        this.onTimerComplete = this.onTimerComplete.bind(this);
+    }
+    
+    async init() {
+        console.log('Initializing Tabata Timer App...');
+        
+        try {
+            // Apply saved theme immediately
+            this.applySavedTheme();
+            
+            // Initialize components
+            await this.initializeComponents();
+            
+            // Setup event listeners
+            this.bindGlobalEvents();
+            
+            // Load initial data
+            this.loadInitialData();
+            
+            // Mark as initialized
+            this.isInitialized = true;
+            
+            console.log('App initialized successfully');
+            
+            // Show welcome message if first time
+            this.checkFirstTimeUser();
+            
+        } catch (error) {
+            console.error('Failed to initialize app:', error);
+            this.showErrorMessage('Failed to initialize application');
+        }
+    }
+    
+    async initializeComponents() {
+        // Initialize timer with current settings
+        const settings = SettingsManager.loadSettings();
+        this.timer = new TabataTimer(settings);
+        
+        // Initialize settings UI
+        this.settingsUI = new SettingsUI();
+        
+        // Initialize preset manager
+        this.presetManager = new PresetManagerUI();
+        
+        // Setup timer event listeners
+        this.timer.on('tick', this.onTimerTick);
+        this.timer.on('phaseChange', this.onTimerPhaseChange);
+        this.timer.on('complete', this.onTimerComplete);
+        this.timer.on('sound', this.onTimerSound);
+        this.timer.on('announce', this.onTimerAnnounce);
+        
+        // Initialize audio system
+        await this.initializeAudio();
+        
+        // Setup service worker for background timer (if supported)
+        this.setupServiceWorker();
+    }
+}
+```
+
+## Event Binding and Coordination
+```javascript
+class TabataApp {
+    bindGlobalEvents() {
+        // Timer controls
+        $('#start-btn').on('click', () => this.startTimer());
+        $('#pause-btn').on('click', () => this.pauseTimer());
+        $('#stop-btn').on('click', () => this.stopTimer());
+        $('#reset-btn').on('click', () => this.resetTimer());
+        
+        // Settings events
+        $(document).on('settings:changed', (e, data) => {
+            this.onSettingsChanged(data);
+        });
+        
+        $(document).on('settings:saved', (e, settings) => {
+            this.onSettingsSaved(settings);
+        });
+        
+        // Tab switching
+        $('#main-tabs button[data-bs-toggle="tab"]').on('shown.bs.tab', (e) => {
+            this.onTabChange(e.target.getAttribute('data-bs-target'));
+        });
+        
+        // Keyboard shortcuts
+        $(document).on('keydown', (e) => {
+            this.handleKeyboardShortcuts(e);
+        });
+        
+        // Visibility change (for background timer handling)
+        document.addEventListener('visibilitychange', () => {
+            this.onVisibilityChange();
+        });
+        
+        // Before unload (save state)
+        window.addEventListener('beforeunload', () => {
+            this.saveAppState();
+        });
+        
+        // Window focus/blur for timer accuracy
+        window.addEventListener('focus', () => this.onWindowFocus());
+        window.addEventListener('blur', () => this.onWindowBlur());
+    }
+    
+    handleKeyboardShortcuts(e) {
+        // Only handle shortcuts when not typing in inputs
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+            return;
+        }
+        
+        switch (e.key) {
+            case ' ': // Spacebar - start/pause
+                e.preventDefault();
+                if (this.timer.state.isRunning) {
+                    this.pauseTimer();
+                } else if (this.timer.state.isPaused) {
+                    this.timer.resume();
+                } else {
+                    this.startTimer();
+                }
+                break;
+                
+            case 'r': // R - reset
+                if (e.ctrlKey || e.metaKey) return; // Don't interfere with refresh
+                this.resetTimer();
+                break;
+                
+            case 's': // S - stop
+                if (e.ctrlKey || e.metaKey) return; // Don't interfere with save
+                this.stopTimer();
+                break;
+                
+            case '1': // Switch to timer tab
+                $('#timer-tab').tab('show');
+                break;
+                
+            case '2': // Switch to settings tab
+                $('#settings-tab').tab('show');
+                break;
+                
+            case '3': // Switch to statistics tab
+                $('#statistics-tab').tab('show');
+                break;
+        }
+    }
+}
+```
+
+## Timer Control Methods
+```javascript
+class TabataApp {
+    startTimer() {
+        if (!this.timer) return;
+        
+        try {
+            this.timer.start();
+            this.updateTimerControls('running');
+            this.showTimerFeedback('Timer started!');
+            
+            // Switch to timer tab if not already there
+            $('#timer-tab').tab('show');
+            
+            // Request wake lock if supported
+            this.requestWakeLock();
+            
+        } catch (error) {
+            console.error('Failed to start timer:', error);
+            this.showErrorMessage('Failed to start timer');
+        }
+    }
+    
+    pauseTimer() {
+        if (!this.timer) return;
+        
+        this.timer.pause();
+        this.updateTimerControls('paused');
+        this.showTimerFeedback('Timer paused');
+        
+        // Release wake lock
+        this.releaseWakeLock();
+    }
+    
+    stopTimer() {
+        if (!this.timer) return;
+        
+        this.timer.stop();
+        this.updateTimerControls('stopped');
+        this.showTimerFeedback('Timer stopped');
+        
+        // Release wake lock
+        this.releaseWakeLock();
+    }
+    
+    resetTimer() {
+        if (!this.timer) return;
+        
+        // Confirm if timer is running
+        if (this.timer.state.isRunning) {
+            if (!confirm('Are you sure you want to reset the running timer?')) {
+                return;
+            }
+        }
+        
+        this.timer.reset();
+        this.updateTimerControls('stopped');
+        this.updateTimerDisplay(this.timer.settings.initialCountdown * 1000, 'initial');
+        this.showTimerFeedback('Timer reset');
+    }
+    
+    updateTimerControls(state) {
+        const $startBtn = $('#start-btn');
+        const $pauseBtn = $('#pause-btn');
+        const $stopBtn = $('#stop-btn');
+        const $resetBtn = $('#reset-btn');
+        
+        // Reset all button states
+        $startBtn.prop('disabled', false).removeClass('d-none');
+        $pauseBtn.prop('disabled', false).addClass('d-none');
+        $stopBtn.prop('disabled', false);
+        $resetBtn.prop('disabled', false);
+        
+        switch (state) {
+            case 'running':
+                $startBtn.addClass('d-none');
+                $pauseBtn.removeClass('d-none');
+                break;
+                
+            case 'paused':
+                $startBtn.removeClass('d-none').html('<i class="bi bi-play-fill"></i> Resume');
+                $pauseBtn.addClass('d-none');
+                break;
+                
+            case 'stopped':
+                $startBtn.removeClass('d-none').html('<i class="bi bi-play-fill"></i> Start');
+                $pauseBtn.addClass('d-none');
+                $stopBtn.prop('disabled', true);
+                break;
+        }
+    }
+}
+```
+
+## Timer Event Handlers
+```javascript
+class TabataApp {
+    onTimerTick(data) {
+        this.updateTimerDisplay(data.timeRemaining, data.phase);
+        this.updateProgressIndicators(data.progress);
+        
+        // Update document title with remaining time
+        const timeDisplay = this.timer.getTimeDisplay();
+        document.title = `${timeDisplay.display} - ${data.phase} - Tabata Timer`;
+    }
+    
+    onTimerPhaseChange(data) {
+        this.updatePhaseIndicator(data.phase, data.label, data.color);
+        this.showPhaseTransition(data.label);
+        
+        // Update background color based on phase
+        this.updatePhaseBackground(data.color);
+        
+        // Announce phase change
+        if (this.shouldAnnounce()) {
+            this.announcePhase(data.label);
+        }
+    }
+    
+    onTimerComplete(data) {
+        this.updateTimerControls('stopped');
+        this.showCompletionMessage(data);
+        this.recordWorkoutStatistics(data);
+        
+        // Reset document title
+        document.title = 'Tabata Timer';
+        
+        // Show completion celebration
+        this.showCompletionCelebration();
+        
+        // Release wake lock
+        this.releaseWakeLock();
+    }
+    
+    onTimerSound(data) {
+        this.playSound(data.name);
+    }
+    
+    onTimerAnnounce(data) {
+        if (this.shouldAnnounce()) {
+            this.speakText(data.text);
+        }
+    }
+    
+    onSettingsChanged(data) {
+        // Update timer settings if timer exists
+        if (this.timer) {
+            this.timer.settings[data.key] = data.value;
+        }
+        
+        // Handle specific setting changes
+        switch (data.key) {
+            case 'theme':
+                this.applyTheme(data.value);
+                break;
+            case 'quotes':
+                this.toggleQuoteDisplay(data.value);
+                break;
+        }
+    }
+    
+    onSettingsSaved(settings) {
+        // Recreate timer with new settings if not running
+        if (this.timer && !this.timer.state.isRunning) {
+            this.timer = new TabataTimer(settings);
+            this.bindTimerEvents();
+        }
+        
+        this.showTimerFeedback('Settings updated');
+    }
+}
+```
+
+## Display Update Methods
+```javascript
+class TabataApp {
+    updateTimerDisplay(timeRemaining, phase) {
+        const timeDisplay = this.timer.formatTime(timeRemaining);
+        
+        $('#timer-minutes').text(timeDisplay.minutes);
+        $('#timer-seconds').text(timeDisplay.seconds);
+        $('#timer-display').attr('data-phase', phase);
+        
+        // Update additional info
+        $('#current-cycle').text(this.timer.state.currentCycle);
+        $('#total-cycles').text(this.timer.settings.numberOfCycles);
+        $('#current-set').text(this.timer.state.currentSet);
+        $('#total-sets').text(this.timer.settings.numberOfSets);
+    }
+    
+    updatePhaseIndicator(phase, label, color) {
+        const $indicator = $('#phase-indicator');
+        $indicator
+            .text(label)
+            .removeClass('phase-exercise phase-rest phase-prepare')
+            .addClass(`phase-${phase}`);
+    }
+    
+    updateProgressIndicators(progress) {
+        // Overall progress
+        $('#overall-progress .progress-bar').css('width', `${progress.overall}%`);
+        
+        // Cycle progress
+        $('#cycle-progress .progress-bar').css('width', `${progress.cycle}%`);
+        
+        // Phase progress (circular)
+        const circumference = 2 * Math.PI * 45; // radius = 45
+        const offset = circumference - (progress.phase / 100) * circumference;
+        $('#phase-circle').css('stroke-dashoffset', offset);
+    }
+    
+    showPhaseTransition(label) {
+        // Show transition overlay
+        const $overlay = $('#phase-transition-overlay');
+        $overlay.find('.phase-label').text(label);
+        $overlay.removeClass('d-none').addClass('show');
+        
+        // Auto-hide after animation
+        setTimeout(() => {
+            $overlay.removeClass('show').addClass('d-none');
+        }, 2000);
+    }
+    
+    loadInitialData() {
+        // Load and display random quote
+        this.displayRandomQuote();
+        
+        // Show days since last workout
+        this.displayLastWorkoutInfo();
+        
+        // Initialize timer display
+        const settings = SettingsManager.loadSettings();
+        this.updateTimerDisplay(settings.initialCountdown * 1000, 'initial');
+        
+        // Load workout statistics
+        this.loadWorkoutStatistics();
+    }
+    
+    displayRandomQuote() {
+        const quotes = this.getMotivationalQuotes();
+        const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+        
+        $('#quote-text').text(randomQuote.text);
+        $('#quote-author').text(randomQuote.author);
+        
+        this.currentQuote = randomQuote;
+    }
+    
+    displayLastWorkoutInfo() {
+        const daysSince = StatisticsManager.getLastWorkoutDate();
+        const $lastWorkout = $('#last-workout');
+        
+        if (daysSince === null) {
+            $lastWorkout.text('No workouts recorded yet');
+        } else if (daysSince === 0) {
+            $lastWorkout.text('Last workout today');
+        } else if (daysSince === 1) {
+            $lastWorkout.text('Last workout yesterday');
+        } else {
+            $lastWorkout.text(`Last workout ${daysSince} days ago`);
+        }
+    }
+    
+    getMotivationalQuotes() {
+        return [
+            { text: "Between saying and doing, many a pair of shoes is worn out.", author: "Iris Murdoch" },
+            { text: "The groundwork for all happiness is good health.", author: "Leigh Hunt" },
+            { text: "Take care of your body. It's the only place you have to live.", author: "Jim Rohn" },
+            { text: "A healthy outside starts from the inside.", author: "Robert Urich" },
+            { text: "The greatest wealth is health.", author: "Virgil" },
+            { text: "Exercise is a celebration of what your body can do.", author: "Unknown" },
+            { text: "Your body can do it. It's your mind you need to convince.", author: "Unknown" },
+            { text: "Fitness is not about being better than someone else. It's about being better than you used to be.", author: "Unknown" }
+        ];
+    }
+}
+```
+
+## App Initialization
+```javascript
+// Initialize app when DOM is ready
+$(document).ready(function() {
+    const app = new TabataApp();
+    app.init();
+    
+    // Make app globally available for debugging
+    window.TabataApp = app;
+});
+
+// Handle app installation prompt (PWA)
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    
+    // Show install button
+    $('#install-btn').removeClass('d-none').on('click', () => {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+                console.log('User accepted the install prompt');
+            }
+            deferredPrompt = null;
+            $('#install-btn').addClass('d-none');
+        });
+    });
+});
+```
