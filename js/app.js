@@ -97,11 +97,16 @@ class TabataApp {
             }
         });
         
-        // Visibility change for atomic timer behavior
+        // Visibility change for atomic timer behavior and wake lock re-acquisition
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden && this.timer) {
                 // Page became visible - timer state is already handled by persistence
                 this.updateDisplay();
+                
+                // Re-acquire wake lock if timer is running
+                if (this.timer.state.isRunning && this.timer.wakeLockManager) {
+                    this.timer.wakeLockManager.reacquire();
+                }
             }
         });
     }

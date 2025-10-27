@@ -28,6 +28,9 @@ class TabataTimer {
         this.exerciseBeepAudio = null;
         this.initializeAudio();
         
+        // Initialize wake lock manager
+        this.wakeLockManager = new WakeLockManager();
+        
         // Load persisted state if available
         this.loadPersistedState();
     }
@@ -180,6 +183,9 @@ class TabataTimer {
             this.audioContext.resume();
         }
         
+        // Request wake lock to keep device awake
+        this.wakeLockManager.request();
+        
         this.state.isRunning = true;
         this.state.isPaused = false;
         this.state.isStopped = false;
@@ -210,6 +216,9 @@ class TabataTimer {
     pause() {
         if (!this.state.isRunning) return;
         
+        // Release wake lock when paused
+        this.wakeLockManager.release();
+        
         this.state.isPaused = true;
         this.state.isRunning = false;
         this.state.pausedTime = Date.now();
@@ -231,6 +240,9 @@ class TabataTimer {
     
     resume() {
         if (!this.state.isPaused) return;
+        
+        // Request wake lock when resuming
+        this.wakeLockManager.request();
         
         this.state.isRunning = true;
         this.state.isPaused = false;
@@ -256,6 +268,9 @@ class TabataTimer {
     }
     
     stop() {
+        // Release wake lock when stopped
+        this.wakeLockManager.release();
+        
         this.state.isRunning = false;
         this.state.isPaused = false;
         this.state.isStopped = true;
@@ -474,6 +489,9 @@ class TabataTimer {
     }
     
     complete() {
+        // Release wake lock when workout completes
+        this.wakeLockManager.release();
+        
         this.state.isRunning = false;
         this.state.currentPhase = 'complete';
         
