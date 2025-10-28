@@ -33,6 +33,7 @@ A minimalist single-page web application for Tabata/interval training. Built wit
 - **Responsive Layout**: Works perfectly on desktop, tablet, and mobile
 - **Keyboard Shortcuts**: Space to start/pause, Ctrl+R to reset, etc.
 - **Motivational Quotes**: Random fitness quotes to keep you motivated
+- **Keeps screen awake**: Prevents device sleep during workouts (iOS and Android)
 
 ### Data Persistence
 - **LocalStorage**: All settings and preferences saved locally
@@ -138,3 +139,14 @@ Feel free to submit issues, feature requests, or pull requests to improve the ap
 ---
 
 **Stay consistent, stay strong! 💪** 
+
+## Changelog
+
+### 2025-10-28
+- Added cross-platform screen wake features:
+  - Android: Screen Wake Lock API to keep display on during workouts
+  - iOS: Background audio with Media Session to maintain activity while device would otherwise sleep
+  - Auto re-acquisition on tab/app visibility changes
+- Added PWA support (manifest and service worker) for better installability and offline usage
+- Integrated Media Session metadata and lock-screen controls (where supported)
+- General reliability improvements to state persistence across visibility changes

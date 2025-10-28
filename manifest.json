@@ -1,0 +1,43 @@
+{
+  "name": "Tabata Stopwatch Pro",
+  "short_name": "Tabata Timer",
+  "description": "Professional Tabata interval timer for workout training",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["health", "fitness", "sports"],
+  "screenshots": [
+    {
+      "src": "screens/screen1.png",
+      "sizes": "1170x2532",
+      "type": "image/png"
+    },
+    {
+      "src": "screens/screen2.png",
+      "sizes": "1170x2532",
+      "type": "image/png"
+    },
+    {
+      "src": "screens/screen3.png",
+      "sizes": "1170x2532",
+      "type": "image/png"
+    }
+  ]
+}
+

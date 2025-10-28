@@ -31,6 +31,9 @@ class TabataTimer {
         // Initialize wake lock manager
         this.wakeLockManager = new WakeLockManager();
         
+        // Initialize background audio manager for iOS
+        this.backgroundAudioManager = new BackgroundAudioManager();
+        
         // Load persisted state if available
         this.loadPersistedState();
     }
@@ -186,6 +189,9 @@ class TabataTimer {
         // Request wake lock to keep device awake
         this.wakeLockManager.request();
         
+        // Start background audio to keep timer running on iOS
+        this.backgroundAudioManager.start();
+        
         this.state.isRunning = true;
         this.state.isPaused = false;
         this.state.isStopped = false;
@@ -219,6 +225,9 @@ class TabataTimer {
         // Release wake lock when paused
         this.wakeLockManager.release();
         
+        // Stop background audio when paused
+        this.backgroundAudioManager.stop();
+        
         this.state.isPaused = true;
         this.state.isRunning = false;
         this.state.pausedTime = Date.now();
@@ -243,6 +252,9 @@ class TabataTimer {
         
         // Request wake lock when resuming
         this.wakeLockManager.request();
+        
+        // Restart background audio when resuming
+        this.backgroundAudioManager.start();
         
         this.state.isRunning = true;
         this.state.isPaused = false;
@@ -270,6 +282,9 @@ class TabataTimer {
     stop() {
         // Release wake lock when stopped
         this.wakeLockManager.release();
+        
+        // Stop background audio when stopped
+        this.backgroundAudioManager.stop();
         
         this.state.isRunning = false;
         this.state.isPaused = false;
@@ -409,6 +424,16 @@ class TabataTimer {
                 totalElapsed: this.state.totalElapsed,
                 progress: this.getProgress()
             });
+            
+            // Update background audio metadata for lock screen display
+            const phases = this.getPhases();
+            const currentPhase = phases[this.state.currentPhase];
+            if (currentPhase && this.backgroundAudioManager) {
+                this.backgroundAudioManager.updateMetadata(
+                    currentPhase.label || this.state.currentPhase,
+                    this.state.timeRemaining
+                );
+            }
         }
     }
     
@@ -491,6 +516,9 @@ class TabataTimer {
     complete() {
         // Release wake lock when workout completes
         this.wakeLockManager.release();
+        
+        // Stop background audio when workout completes
+        this.backgroundAudioManager.stop();
         
         this.state.isRunning = false;
         this.state.currentPhase = 'complete';

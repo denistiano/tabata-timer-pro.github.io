@@ -13,6 +13,9 @@ class TabataApp {
         // Initialize theme first
         ThemeManager.initializeTheme();
         
+        // Register service worker for PWA functionality
+        this.registerServiceWorker();
+        
         // Load settings
         this.settings = SettingsManager.loadSettings();
         
@@ -33,6 +36,24 @@ class TabataApp {
         this.isInitialized = true;
         
         console.log('Tabata Timer App initialized');
+    }
+    
+    async registerServiceWorker() {
+        if ('serviceWorker' in navigator) {
+            try {
+                const registration = await navigator.serviceWorker.register('/service-worker.js');
+                console.log('Service Worker registered:', registration);
+                
+                // Check for updates
+                registration.addEventListener('updatefound', () => {
+                    console.log('Service Worker update found');
+                });
+            } catch (error) {
+                console.error('Service Worker registration failed:', error);
+            }
+        } else {
+            console.log('Service Worker not supported');
+        }
     }
     
     bindEvents() {
@@ -104,10 +125,25 @@ class TabataApp {
                 this.updateDisplay();
                 
                 // Re-acquire wake lock if timer is running
-                if (this.timer.state.isRunning && this.timer.wakeLockManager) {
-                    this.timer.wakeLockManager.reacquire();
+                if (this.timer.state.isRunning) {
+                    if (this.timer.wakeLockManager) {
+                        this.timer.wakeLockManager.reacquire();
+                    }
+                    // Re-acquire background audio if timer is running
+                    if (this.timer.backgroundAudioManager && !this.timer.backgroundAudioManager.isActive()) {
+                        this.timer.backgroundAudioManager.start();
+                    }
                 }
             }
+        });
+        
+        // Handle media session controls (from lock screen)
+        document.addEventListener('media-session-previous', () => {
+            this.handlePrevious();
+        });
+        
+        document.addEventListener('media-session-next', () => {
+            this.handleNext();
         });
     }
     
